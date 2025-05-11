@@ -70,3 +70,36 @@ def fetch_api_data(url: str, params: dict = None, headers: dict = None) -> dict:
     return {}
 
     
+import pandas as pd
+import glob
+import os
+
+def merge_pet_status_csvs(folder_path: str, output_file: str):
+    """
+    특정 폴더 내 `_petStatus.csv`로 끝나는 파일들을 모두 병합.
+    열이 서로 다른 경우 없는 값은 0으로 채움.
+
+    Parameters:
+        folder_path (str): csv 파일들이 있는 폴더 경로
+        output_file (str): 저장할 최종 CSV 파일 경로
+    """
+    all_files = glob.glob(os.path.join(folder_path, "*_petStatus.csv"))
+
+    dataframes = []
+    for file in all_files:
+        df = pd.read_csv(file)
+        df = df.fillna(0)  # NaN을 0으로 채움
+        dataframes.append(df)
+
+    if not dataframes:
+        print("병합할 파일이 없습니다.")
+        return
+
+    # 서로 다른 열을 가진 DataFrame들을 outer join으로 병합
+    merged_df = pd.concat(dataframes, ignore_index=True, sort=False).fillna(0)
+
+    # 숫자가 아닌 열도 0으로 바꾸고 싶다면 다음 줄도 추가하세요:
+    # merged_df = merged_df.applymap(lambda x: 0 if pd.isna(x) else x)
+
+    merged_df.to_csv(output_file, index=False)
+    print(f"병합 완료: {output_file}")
